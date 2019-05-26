@@ -6,9 +6,17 @@ var i = tempPath.indexOf("Temporary Internet Files");
 if (i >= 0) tempPath = tempPath.substr(0, i + 4);
 //tempPath should now contain something like C:\Documents and Settings\<user>\Local Settings\Temp
 
+function replaceAll(str, searchStr, replaceStr) {
+  return str.split(searchStr).join(replaceStr);
+}
+
 // prompt for user input
 var thisFile = new File($.fileName);  
 var basePath = thisFile.path;  
+var basePathW = basePath;
+basePathW = basePathW.charAt(1) + ":/" + basePathW.substring(3, basePathW.length);
+basePathW = replaceAll(basePathW, "/", "\\");
+
 var lastcodeFile = new File (basePath + "\\latex.tex");  
 lastcodeFile.open("r");
 var latexcode = lastcodeFile.read();
@@ -40,23 +48,23 @@ renderDlg.onClick = function () {
         latexfile.writeln("\\end{document}");
         latexfile.close();
 
-        var pdffile = File(tempPath + "\\latex2illustrator.pdf");
+        var pdffile = File(basePath + "\\latex2illustrator.pdf");
         if (pdffile.exists)
             pdffile.remove();
 
         // create a batch file calling latex
-        var batchfile = new File(tempPath + '\\latex2illustrator.bat');
+        var batchfile = new File(basePath + '\\latex2illustrator.bat');
         batchfile.open("w");
-        batchfile.writeln(pdflatexexe + ' -aux-directory="' + tempPath + '" -include-directory="' + tempPath + '" -output-directory="' + tempPath + '" "' + tempPath + '\\latex2illustrator.tex"');
-        //batchfile.writeln('pause');
-        batchfile.writeln('del "' + tempPath + '\\latex2illustrator.bat"');
+		//batchfile.writeIn('del "' + basePath + '\\latex2illustrator.pdf"');
+        batchfile.writeln(pdflatexexe + ' -aux-directory="' + tempPath + '" -include-directory="' + tempPath + '" -output-directory="' + basePathW + '" "' + tempPath + '\\latex2illustrator.tex"');
+        batchfile.writeln('del "' + basePathW + '\\latex2illustrator.bat"');
         batchfile.close();
         batchfile.execute();
 
         for (; batchfile.exists;)
             // wait until the batch file has removed itself
-
-            var pdffile = File(tempPath + "\\latex2illustrator.pdf");
+			
+            var pdffile = File(basePathW + "\\latex2illustrator.pdf");
         if (pdffile.exists) {
             // import pdf file into the current document
             var grp = app.activeDocument.activeLayer.groupItems.createFromFile(pdffile);
@@ -73,7 +81,7 @@ renderDlg.onClick = function () {
             grp.translate(app.activeDocument.activeView.centerPoint[0] - grp.left, app.activeDocument.activeView.centerPoint[1] - grp.top);
         }
         else
-            alert("File " + tempPath + "\\" + pdffile.name + " could not be created. LaTeX error?");
+            alert("File " + basePathW + "\\" + pdffile.name + " could not be created. LaTeX error?");
     }
 
 }
